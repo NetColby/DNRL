@@ -121,16 +121,6 @@ class Environment(object):
             print("Episode {p}, Score: {s}, Final Step: {t}, Goal: {g}".format(p=episode_num, s=reward_all,
                                                                                t=time_step, g=done))
 
-            if self.recorder:
-                os.system("ffmpeg -r 2 -i ./results_agents_landmarks/snaps/%04d.png -b:v 40000 -minrate 40000 -maxrate 4000k -bufsize 1835k -c:v mjpeg -qscale:v 0 "
-                          + "./results_agents_landmarks/videos/{a1}_{a2}_{a3}_{a4}.avi".format(a1=self.num_agents,
-                                                                                                 a2=self.num_tasks,
-                                                                                                 a3=self.num_tasks,
-                                                                                                 a4=self.grid_size))
-                files = glob.glob('./results_agents_landmarks/snaps/*')
-                for f in files:
-                    os.remove(f)
-
             if not self.test:
                 if episode_num % 100 == 0:
                     df = pd.DataFrame(rewards_list, columns=['score'])
