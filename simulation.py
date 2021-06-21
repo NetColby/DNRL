@@ -39,10 +39,11 @@ def get_name_timesteps(args):
     return './results_agents_landmarks/timesteps_files/' + file_name_str + '.csv'
 
 
-class Environment(object):
+class Simulation(object):
 
     def __init__(self, arguments):
-        current_path = os.path.dirname(__file__)  # Where your .py file is located
+        # current_path = os.path.dirname(__file__)  # Where your .py file is located
+        current_path = '/Users/cli22/Desktop/DNRL-main/DNRL'
         self.env = Environment(arguments, current_path)
         self.episodes_number = arguments['episode_number']
         self.render = arguments['render'] # delete
@@ -65,8 +66,8 @@ class Environment(object):
         max_score = -10000
         for episode_num in range(self.episodes_number):
             state = self.env.reset()
-            if self.render:# delete
-                self.env.render()
+            # if self.render:# delete
+            #     self.env.render()
 
             random_moves = random.randint(0, self.max_random_moves)
 
@@ -162,9 +163,9 @@ if __name__ =="__main__":
     parser.add_argument('-test', '--test', action='store_true', help='Enable the test phase if "store_false"')
 
     # Game Parameters
-    parser.add_argument('-k', '--agents-number', default=5, type=int, help='The number of agents')
-    parser.add_argument('-g', '--grid-size', default=10, type=int, help='Grid size')
-    parser.add_argument('-ts', '--max-timestep', default=100, type=int, help='Maximum number of timesteps per episode')
+    parser.add_argument('-k', '--agents-number', default=9, type=int, help='The number of agents')
+    parser.add_argument('-g', '--grid-size', default=300, type=int, help='Grid size')
+    parser.add_argument('-ts', '--max-timestep', default=100000, type=int, help='Maximum number of timesteps per episode')
 
     parser.add_argument('-rm', '--max-random-moves', default=0, type=int,
                         help='Maximum number of random initial moves for the agents')
@@ -177,11 +178,10 @@ if __name__ =="__main__":
 
     args = vars(parser.parse_args())
     os.environ['CUDA_VISIBLE_DEVICES'] = args['gpu_num']
+    sim = Simulation(args)
 
-    env = Environment(args)
-
-    state_size = env.env.state_size
-    action_space = env.env.action_space()
+    state_size = sim.env.state_size
+    action_space = sim.env.get_action_space_size()
 
     all_agents = []
     for b_idx in range(args['agents_number']):
@@ -192,4 +192,4 @@ if __name__ =="__main__":
     rewards_file = get_name_rewards(args)
     timesteps_file = get_name_timesteps(args)
 
-    env.run(all_agents, rewards_file, timesteps_file)
+    sim.run(all_agents, rewards_file, timesteps_file)

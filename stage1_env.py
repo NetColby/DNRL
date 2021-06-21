@@ -47,8 +47,8 @@ class Environment:
         self.cell = []
 
         self.y_ik = np.zeros((self.num_tasks, self.num_agents))
-        self.B_k = np.array((B for i in range(self.num_agents)))
-        self.T_i = np.array((T for i in range(self.num_tasks)))
+        self.B_k = np.array([B for i in range(self.num_agents)])
+        self.T_i = np.array([T for i in range(self.num_tasks)])
         # self.tasks_positions_idx = np.random.choice(len(self.cells) - 1, size=self.num_tasks,
         #                                     replace=False)
         self.tasks_positions_idx = []
@@ -71,15 +71,16 @@ class Environment:
         self.terminal = False
         [self.cells, self.tasks_positions_idx] = self.set_positions_idx()
         self.y_ik = np.zeros((self.num_tasks, self.num_agents))
-        self.B_k = np.array((B for i in range (self.num_agents)))
-        self.T_i = np.array((T for i in range(self.num_tasks)))
+        self.B_k = np.array([B for i in range (self.num_agents)])
+        self.T_i = np.array([T for i in range(self.num_tasks)])
         
 
         # map generated position indices to positions
         self.tasks_positions = [self.cells[pos] for pos in self.tasks_positions_idx]
         self.agents_positions = [(BASE_X, BASE_Y) for i in range(K)]
-        initial_action = [10 for i in range(self.num_agents)]
-        initial_state = list(sum(self.tasks_positions + self.agents_positions + initial_action + self.T_i, ()))
+        initial_actions = [10 for i in range(self.num_agents)]
+        initial_pos_state = list(sum(self.tasks_positions + self.agents_positions, ()))
+        initial_state = initial_pos_state + initial_actions + list(self.T_i)
         return initial_state
 
     def step(self, agents_actions):
@@ -104,8 +105,8 @@ class Environment:
             if np.sum(self.T_i)==0:
                 self.terminal=True
 
-        new_state = list(sum(self.tasks_positions + self.agents_positions + agents_actions + self.T_i, ()))
-
+        new_pos_state = list(sum(self.tasks_positions + self.agents_positions, ()))
+        new_state = new_pos_state + agents_actions + list(self.T_i)
         return [new_state, reward, self.terminal]
 
     def energy_required_back(self, pos_list):
@@ -159,6 +160,9 @@ class Environment:
             if act_list[idx] != 8 or act_list[idx] != 9:
                 pos_act_applied = map(operator.add, pos_list[idx], self.action_diff[act_list[idx]])
                 # checks to make sure the new pos in inside the grid
+                for key in pos_act_applied:
+                    print(key)
+                print(pos_act_applied)
                 for i in range(0, 2):
                     if pos_act_applied[i] < 0:
                         pos_act_applied[i] = 0
@@ -183,7 +187,7 @@ class Environment:
 
         return final_positions
 
-    def action_space(self):
+    def get_action_space_size(self):
         return len(self.action_space)
 
     # def render(self):
