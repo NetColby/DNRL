@@ -48,7 +48,7 @@ class Environment:
 
         self.y_ik = np.zeros((self.num_tasks, self.num_agents))
         self.B_k = np.array((B for i in range(self.num_agents)))
-        self.T_i = np.array((T for in range(self.num_tasks)))
+        self.T_i = np.array((T for i in range(self.num_tasks)))
         # self.tasks_positions_idx = np.random.choice(len(self.cells) - 1, size=self.num_tasks,
         #                                     replace=False)
         self.tasks_positions_idx = []
@@ -72,7 +72,7 @@ class Environment:
         [self.cells, self.tasks_positions_idx] = self.set_positions_idx()
         self.y_ik = np.zeros((self.num_tasks, self.num_agents))
         self.B_k = np.array((B for i in range (self.num_agents)))
-        self.T_i = np.array((T for in range(self.num_tasks)))
+        self.T_i = np.array((T for i in range(self.num_tasks)))
         
 
         # map generated position indices to positions
