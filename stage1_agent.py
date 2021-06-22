@@ -55,12 +55,12 @@ class Agent(object):
             return 8
         if np.random.rand() <= self.epsilon:
             for i in range (9):
-                if (state[9 * 2 + label * 2] == state[i * 2] and state[9 * 2 + label * 2 + 1] == state[i * 2 + 1]):
+                if (state[9 * 2 + label * 2] == state[i * 2] and state[9 * 2 + label * 2 + 1] == state[i * 2 + 1]) and (state[9*2+9*2+9+i]>0):
                     return random.randrange(self.action_size - 1)
             return random.randrange(self.action_size - 2)
         else:
             for i in range (9):
-                if (state[9 * 2 + label * 2] == state[i * 2] and state[9 * 2 + label * 2 + 1] == state[i * 2 + 1]):
+                if (state[9 * 2 + label * 2] == state[i * 2] and state[9 * 2 + label * 2 + 1] == state[i * 2 + 1]) and (state[9*2+9*2+9+i]>0):
                     return np.argmax(self.brain.predict_one_sample(state)[0:-1])
             return np.argmax(self.brain.predict_one_sample(state)[0:-2])
 
