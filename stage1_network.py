@@ -10,6 +10,7 @@ from tensorflow.keras.models import Sequential, Model
 from tensorflow.keras.layers import Dense, Lambda, Input, Concatenate
 from tensorflow.keras.optimizers import *
 from tensorflow.keras import backend as K
+import numpy as np
 
 HUBER_LOSS_DELTA = 1.0
 
@@ -91,7 +92,6 @@ class Brain(object):
         return model
 
     def train(self, x, y, sample_weight=None, epochs=1, verbose=0):  # x is the input to the network and y is the output
-
         self.model.fit(x, y, batch_size=len(x), sample_weight=sample_weight, epochs=epochs, verbose=verbose)
 
     def predict(self, state, target=False):

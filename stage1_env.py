@@ -18,7 +18,7 @@ C_F = 2.5                   # energy consumption rate for forwarding
 EFFICIENCY_THRESHOLD = 0.3  # energy efficiency threshold for calculating reward
 B = 10000                   # battery capacity for drone
 T = 3000                    # energy required for one single task
-Q = -5                      # drone not coming back penalty
+Q = -50                      # drone not coming back penalty
 
 # actions
 UP = 0
@@ -88,6 +88,10 @@ class Environment:
         if (np.array(self.B_k) - np.array(self.energy_required_back(self.agents_positions))).all() < 0:
             reward = Q
             self.terminal = True
+
+        elif np.all(np.asarray(agents_actions)==8):
+            reward = ALPHA * (np.sum(self.y_ik)/(B*self.num_agents-np.sum(self.B_k))-EFFICIENCY_THRESHOLD)-np.sum(self.T_i)/(T*self.num_tasks)
+            self.terminal = True
         
         else:
             # update the position of agents
@@ -100,7 +104,7 @@ class Environment:
             # update 2D array (the portion of task at location i executed by drone k)
             self.y_ik = self.update_2D_array(self.agents_positions, agents_actions)
             # calculate reward based on the energy efficiency and the energy required to finsih the remining tasks
-            reward = ALPHA * (np.sum(self.y_ik)/B*self.num_agents-np.sum(self.B_k)-EFFICIENCY_THRESHOLD)-np.sum(self.T_i)/T*self.num_tasks
+            reward = ALPHA * (np.sum(self.y_ik)/(B*self.num_agents-np.sum(self.B_k))-EFFICIENCY_THRESHOLD)-np.sum(self.T_i)/(T*self.num_tasks)
 
             if np.sum(self.T_i)==0:
                 self.terminal=True
@@ -157,12 +161,12 @@ class Environment:
     def update_positions(self, pos_list, act_list):
         positions_action_applied = []
         for idx in range(len(pos_list)):
-            if act_list[idx] != 8 or act_list[idx] != 9:
-                pos_act_applied = map(operator.add, pos_list[idx], self.action_diff[act_list[idx]])
+            if act_list[idx] != 8 or act_list[idx] != 9 or act_list[idx] !=10:
+                # pos_act_applied = map(operator.add, pos_list[idx], self.action_diff[act_list[idx]])
+                pos_act_applied = list(np.asarray(pos_list[idx]) + np.asarray(self.action_diff[act_list[idx]]))
                 # checks to make sure the new pos in inside the grid
-                for key in pos_act_applied:
-                    print(key)
-                print(pos_act_applied)
+                # for key in pos_act_applied:
+                #     print(key)
                 for i in range(0, 2):
                     if pos_act_applied[i] < 0:
                         pos_act_applied[i] = 0
