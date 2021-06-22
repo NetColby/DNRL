@@ -75,8 +75,8 @@ class Simulation(object):
             for _ in range(random_moves):
                 actions = [10 for _ in range(len(agents))]
                 state, _, _ = self.env.step(actions)
-                if self.render:
-                    self.env.render()
+                # if self.render:
+                #     self.env.render()
 
             # converting list of positions to an array
             state = np.array(state)
@@ -112,9 +112,9 @@ class Simulation(object):
                 time_step += 1
                 state = next_state
                 reward_all += reward
-
-                if self.render:
-                    self.env.render()
+                #
+                # if self.render:
+                #     self.env.render()
 
             rewards_list.append(reward_all)
             timesteps_list.append(time_step)
