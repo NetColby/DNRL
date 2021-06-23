@@ -19,6 +19,7 @@ EFFICIENCY_THRESHOLD = 0.3  # energy efficiency threshold for calculating reward
 B = 10000                   # battery capacity for drone
 T = 3000                    # energy required for one single task
 Q = -50                      # drone not coming back penalty
+TRAVEL_ENERGY_THRESHOLD = 5904
 
 # actions
 UP = 0
@@ -96,20 +97,24 @@ class Environment:
                 #reward = -np.sum(self.T_i)/T
                 reward = -90000
             self.terminal = True
-        
+
         else:
-            # update the position of agents
+            # # update the position of agents
             self.agents_positions = self.update_positions(self.agents_positions, agents_actions)
-
-            # update drones energy state
+            #
+            # # update drones energy state
             self.B_k = self.update_agents_energy(agents_actions)
-            # update task energy required 
+            # # update task energy required
             self.T_i = self.update_tasks_energy(self.agents_positions, agents_actions)
-            # update 2D array (the portion of task at location i executed by drone k)
+            # # update 2D array (the portion of task at location i executed by drone k)
             self.y_ik = self.update_2D_array(self.agents_positions, agents_actions)
-            # calculate reward based on the energy efficiency and the energy required to finsih the remining tasks
-            reward = ALPHA * (np.sum(self.y_ik)/(B*self.num_agents-np.sum(self.B_k))-EFFICIENCY_THRESHOLD)-np.sum(self.T_i)/(T*self.num_tasks)
-
+            # # calculate reward based on the energy efficiency and the energy required to finsih the remining tasks
+            # reward = ALPHA * (np.sum(self.y_ik)/(B*self.num_agents-np.sum(self.B_k))-EFFICIENCY_THRESHOLD)-np.sum(self.T_i)/(T*self.num_tasks)
+            current_travel_energy = (B*self.num_agents-np.sum(self.B_k))-np.sum(self.y_ik)
+            if current_travel_energy <= TRAVEL_ENERGY_THRESHOLD:
+                reward = np.sum(self.y_ik)/(T*self.num_tasks)+np.sum(self.y_ik)/(B*self.num_agents-np.sum(self.B_k))
+            else:
+                reward = (TRAVEL_ENERGY_THRESHOLD-current_travel_energy)/TRAVEL_ENERGY_THRESHOLD + 1/(T*self.num_tasks-np.sum(self.y_ik)+1)
             if np.sum(self.T_i)==0:
                 self.terminal=True
 
