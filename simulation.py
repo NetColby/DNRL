@@ -167,7 +167,7 @@ if __name__ =="__main__":
     # Game Parameters
     parser.add_argument('-k', '--agents-number', default=9, type=int, help='The number of agents')
     parser.add_argument('-g', '--grid-size', default=300, type=int, help='Grid size')
-    parser.add_argument('-ts', '--max-timestep', default=1000, type=int, help='Maximum number of timesteps per episode')
+    parser.add_argument('-ts', '--max-timestep', default=100000, type=int, help='Maximum number of timesteps per episode')
 
     parser.add_argument('-rm', '--max-random-moves', default=0, type=int,
                         help='Maximum number of random initial moves for the agents')
