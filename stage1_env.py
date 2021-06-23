@@ -90,7 +90,11 @@ class Environment:
             self.terminal = True
 
         elif np.all(np.asarray(agents_actions)==8):
-            reward = ALPHA * (np.sum(self.y_ik)/(B*self.num_agents-np.sum(self.B_k))-EFFICIENCY_THRESHOLD)-np.sum(self.T_i)/(T*self.num_tasks)
+            if np.sum(self.T_i) == 0:
+                reward = ALPHA * (np.sum(self.y_ik)/(B*self.num_agents-np.sum(self.B_k))-EFFICIENCY_THRESHOLD)-np.sum(self.T_i)/(T*self.num_tasks) + 1000
+            else:
+                #reward = -np.sum(self.T_i)/T
+                reward = -90000
             self.terminal = True
         
         else:
