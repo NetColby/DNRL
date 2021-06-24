@@ -108,8 +108,9 @@ class Simulation(object):
                             if time_step % self.steps_b_updates == 0:
                                 agent.replay()
                             agent.update_target_model()
-                print(f'current reward:{reward}')
-                print(f'current actions:{actions}')
+                if time_step % 100 == 0:
+                    print(f'current reward:{reward}')
+                    print(f'current actions:{actions}')
                 total_step += 1
                 time_step += 1
                 state = next_state
