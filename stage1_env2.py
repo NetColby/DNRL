@@ -10,7 +10,7 @@ import operator
 
 K = 9  # number of drones
 NUMBER_OF_TASKS = 9  # number of tasks
-GRID_SIZE = 300  # size of the grid/environment
+GRID_SIZE = 30  # size of the grid/environment
 ALPHA = 0.5  # constant coefficient for execution in reward function
 C_H = 2  # energy consumption rate for hovering
 C_T = 3  # energy consumption rate for task execution
@@ -19,7 +19,7 @@ EFFICIENCY_THRESHOLD = 0.3  # energy efficiency threshold for calculating reward
 B = 10000  # battery capacity for drone
 T = 3000  # energy required for one single task
 Q = -50  # drone not coming back penalty
-TRAVEL_ENERGY_THRESHOLD = 5904
+TRAVEL_ENERGY_THRESHOLD = 1180
 
 # actions
 UP = 0
@@ -30,13 +30,12 @@ UPPER_LEFT = 4
 UPPER_RIGHT = 5
 BOTTOM_LEFT = 6
 BOTTOM_RIGHT = 7
-FREEZE = 8
+STATIONARY = 8
 EXECUTE = 9
-STATIONARY = 10
 
 # base station
-BASE_X = 300
-BASE_Y = 300
+BASE_X = 30
+BASE_Y = 30
 
 
 class Environment:
@@ -44,10 +43,10 @@ class Environment:
         self.num_agents = K
         self.num_tasks = NUMBER_OF_TASKS
         self.grid_size = GRID_SIZE
-        self.state_size = self.num_agents * 3 + self.num_tasks * 3  # not used
+        self.state_size = self.num_agents * 4 + self.num_tasks * 3  # not used
         self.agents_positions = []
         self.tasks_positions = []
-        self.cell = []
+        self.cells = []
 
         self.y_ik = np.zeros((self.num_tasks, self.num_agents))
         self.B_k = np.array([B for i in range(self.num_agents)])
@@ -56,10 +55,8 @@ class Environment:
         #                                     replace=False)
         self.tasks_positions_idx = []
 
-        self.action_space = [UP, DOWN, LEFT, RIGHT, UPPER_LEFT, UPPER_RIGHT, BOTTOM_LEFT, BOTTOM_RIGHT, FREEZE, EXECUTE,
-                             STATIONARY]
-        self.action_diff = [(0, -1), (0, 1), (-1, 0), (1, 0), (-1, -1), (1, -1), (-1, 1), (1, 1), (0, 0), (0, 0),
-                            (0, 0)]
+        self.action_space = [UP, DOWN, LEFT, RIGHT, UPPER_LEFT, UPPER_RIGHT, BOTTOM_LEFT, BOTTOM_RIGHT, STATIONARY, EXECUTE]
+        self.action_diff = [(0, -1), (0, 1), (-1, 0), (1, 0), (-1, -1), (1, -1), (-1, 1), (1, 1), (0, 0), (0, 0)]
 
         self.num_episodes = 0
         self.terminal = False
@@ -67,7 +64,7 @@ class Environment:
     def set_positions_idx(self):
 
         cells = [(i, j) for i in range(0, self.grid_size) for j in range(0, self.grid_size)]
-        tasks_positions_idx = [15050, 15150, 15250, 45050, 45150, 45250, 75050, 75150, 75250]
+        tasks_positions_idx = [155, 165, 175, 455, 465, 475, 755, 765, 775]
         return [cells, tasks_positions_idx]
 
     def reset(self):  # initialize the world
@@ -81,64 +78,53 @@ class Environment:
         # map generated position indices to positions
         self.tasks_positions = [self.cells[pos] for pos in self.tasks_positions_idx]
         self.agents_positions = [(BASE_X, BASE_Y) for i in range(K)]
-        initial_actions = [10 for i in range(self.num_agents)]
+        initial_actions = [8 for i in range(self.num_agents)]
         initial_pos_state = list(sum(self.tasks_positions + self.agents_positions, ()))
         initial_state = initial_pos_state + initial_actions + list(self.T_i)
+        initial_state = initial_state + list(self.B_k)
         return initial_state
 
     def step(self, agents_actions):
-        # check whether to go back
-        if (np.array(self.B_k) - np.array(self.energy_required_back(self.agents_positions))).all() < 0:
-            reward = Q
-            self.terminal = True
+        # task finisihed & drones all go back to base station
+        # update the position of agents
+        self.agents_positions = self.update_positions(self.agents_positions, agents_actions)
+        #
+        # update drones energy state
+        self.B_k = self.update_agents_energy(agents_actions)
+        # update task energy required
+        self.T_i = self.update_tasks_energy(self.agents_positions, agents_actions)
+        # update 2D array (the portion of task at location i executed by drone k)
+        self.y_ik = self.update_2D_array(self.agents_positions, agents_actions)
 
-        elif np.all(np.asarray(agents_actions) == 8):
-            if np.sum(self.T_i) == 0:
-                reward = ALPHA * (np.sum(self.y_ik) / (
-                            B * self.num_agents - np.sum(self.B_k)) - EFFICIENCY_THRESHOLD) - np.sum(self.T_i) / (
-                                     T * self.num_tasks) + 1000
-            else:
-                # reward = -np.sum(self.T_i)/T
-                reward = -90000
-            self.terminal = True
+        if self.T_i.all()==0 and np.all(np.asarray(self.agents_positions)==(BASE_X,BASE_Y)):
+            reward = np.sum(self.y_ik) / (T * self.num_tasks) + np.sum(self.y_ik) / (B * self.num_agents - np.sum(self.B_k))
+            self.terminal == True
 
+        #task unfinished
         else:
-            # # update the position of agents
-            self.agents_positions = self.update_positions(self.agents_positions, agents_actions)
-            #
-            # # update drones energy state
-            self.B_k = self.update_agents_energy(agents_actions)
-            # # update task energy required
-            self.T_i = self.update_tasks_energy(self.agents_positions, agents_actions)
-            # # update 2D array (the portion of task at location i executed by drone k)
-            self.y_ik = self.update_2D_array(self.agents_positions, agents_actions)
-            # # calculate reward based on the energy efficiency and the energy required to finsih the remining tasks
-            # reward = ALPHA * (np.sum(self.y_ik)/(B*self.num_agents-np.sum(self.B_k))-EFFICIENCY_THRESHOLD)-np.sum(self.T_i)/(T*self.num_tasks)
             current_travel_energy = (B * self.num_agents - np.sum(self.B_k)) - np.sum(self.y_ik)
             if current_travel_energy <= TRAVEL_ENERGY_THRESHOLD:
-                reward = np.sum(self.y_ik) / (T * self.num_tasks) + np.sum(self.y_ik) / (
-                            B * self.num_agents - np.sum(self.B_k)) + (TRAVEL_ENERGY_THRESHOLD-current_travel_energy)/TRAVEL_ENERGY_THRESHOLD
+                reward = np.sum(self.y_ik) / (T * self.num_tasks) + np.sum(self.y_ik) / (B * self.num_agents - np.sum(self.B_k)) + np.sum(self.B_k, where = self.B_k < 0) / (B * self.num_agents)
             else:
-                reward = (TRAVEL_ENERGY_THRESHOLD - current_travel_energy) / TRAVEL_ENERGY_THRESHOLD + 1 / (
-                            T * self.num_tasks - np.sum(self.y_ik) + 1)
-            if np.sum(self.T_i) == 0:
-                self.terminal = True
+                reward = (TRAVEL_ENERGY_THRESHOLD - current_travel_energy) / TRAVEL_ENERGY_THRESHOLD + 1 / (T * self.num_tasks - np.sum(self.y_ik) + 1)
 
         new_pos_state = list(sum(self.tasks_positions + self.agents_positions, ()))
-        new_state = new_pos_state + agents_actions + list(self.T_i)
+        new_state = new_pos_state + agents_actions + list(self.T_i) + list(self.B_k)
         return [new_state, reward, self.terminal]
 
-    def energy_required_back(self, pos_list):
-        energy_required = []
-        for pos in pos_list:
-            forward_energy = min(abs(pos[0] - BASE_X), abs(pos[1] - BASE_Y)) * C_F
-            howard_energy = abs(abs(pos[0]) - abs(pos[1])) * C_F * (2 ** (1 / 2) / 2) + C_H * (1 - (2 ** (1 / 2) / 2))
-            energy_required.append(forward_energy + howard_energy)
-        return energy_required
+    # def energy_required_back(self, pos_list):
+    #     energy_required = []
+    #     for pos in pos_list:
+    #         forward_energy = min(abs(pos[0] - BASE_X), abs(pos[1] - BASE_Y)) * C_F
+    #         howard_energy = abs(abs(pos[0]) - abs(pos[1])) * C_F * (2 ** (1 / 2) / 2) + C_H * (1 - (2 ** (1 / 2) / 2))
+    #         energy_required.append(forward_energy + howard_energy)
+    #     return energy_required
 
     def update_agents_energy(self, act_list):
         B_k = self.B_k
         for i in range(len(act_list)):
+            if self.agents_positions[i] == (BASE_X,BASE_Y) and act_list[i]==8:
+                B_k[i] = B_k[i]
             if 4 <= act_list[i] <= 7:
                 B_k[i] = B_k[i] - C_F
             elif act_list[i] <= 3:
@@ -146,7 +132,7 @@ class Environment:
             elif act_list[i] == 9:
                 B_k[i] = B_k[i] - C_T - C_H
             else:
-                B_k[i] = B_k[i]
+                B_k[i] = B_k[i] - C_H
         return B_k
 
     def update_tasks_energy(self, pos_list, act_list):
@@ -154,9 +140,9 @@ class Environment:
         execute_idx = [i for i in range(len(act_list)) if act_list[i] == 9]
         agents_execute_pos = list(np.array(pos_list)[execute_idx])
         task_idx = []
-        for agent_execute_pos in agents_execute_pos:
+        for i in range(len(agents_execute_pos)):
             for j in range(len(self.tasks_positions)):
-                if (self.tasks_positions[j] == agent_execute_pos):
+                if (self.tasks_positions[j] == tuple(agents_execute_pos[i]) and self.B_k[execute_idx[i]]>C_T+C_H):
                     task_idx.append(j)
         for idx in task_idx:
             T_i[idx] = T_i[idx] - C_T
@@ -169,16 +155,17 @@ class Environment:
         agents_execute_pos = list(np.array(pos_list)[execute_idx])
         for p in range(len(agents_execute_pos)):
             for q in range(len(self.tasks_positions)):
-                if (self.tasks_positions[q] == agents_execute_pos[p]):
+                if (self.tasks_positions[q] == tuple(agents_execute_pos[p]) and self.B_k[execute_idx[p]]>C_T+C_H):
                     y_ik[q][p] = y_ik[q][p] + C_T
         return y_ik
 
     def update_positions(self, pos_list, act_list):
         positions_action_applied = []
         for idx in range(len(pos_list)):
-            if act_list[idx] != 8 or act_list[idx] != 9 or act_list[idx] != 10:
+            if act_list[idx] != 8 and act_list[idx] != 9:
                 # pos_act_applied = map(operator.add, pos_list[idx], self.action_diff[act_list[idx]])
                 pos_act_applied = list(np.asarray(pos_list[idx]) + np.asarray(self.action_diff[act_list[idx]]))
+
                 # checks to make sure the new pos in inside the grid
                 # for key in pos_act_applied:
                 #     print(key)
@@ -191,20 +178,20 @@ class Environment:
             else:
                 positions_action_applied.append(pos_list[idx])
 
-        final_positions = []
+        # final_positions = []
+        #
+        # for pos_idx in range(len(pos_list)):
+        #     if positions_action_applied[pos_idx] == pos_list[pos_idx]:
+        #         final_positions.append(pos_list[pos_idx])
+        #     elif positions_action_applied[pos_idx] not in pos_list and positions_action_applied[
+        #         pos_idx] not in positions_action_applied[
+        #                         0:pos_idx] + positions_action_applied[
+        #                                      pos_idx + 1:]:
+        #         final_positions.append(positions_action_applied[pos_idx])
+        #     else:
+        #         final_positions.append(pos_list[pos_idx])
 
-        for pos_idx in range(len(pos_list)):
-            if positions_action_applied[pos_idx] == pos_list[pos_idx]:
-                final_positions.append(pos_list[pos_idx])
-            elif positions_action_applied[pos_idx] not in pos_list and positions_action_applied[
-                pos_idx] not in positions_action_applied[
-                                0:pos_idx] + positions_action_applied[
-                                             pos_idx + 1:]:
-                final_positions.append(positions_action_applied[pos_idx])
-            else:
-                final_positions.append(pos_list[pos_idx])
-
-        return final_positions
+        return positions_action_applied
 
     def get_action_space_size(self):
         return len(self.action_space)

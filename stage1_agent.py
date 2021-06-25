@@ -50,19 +50,11 @@ class Agent(object):
         if self.test:
             self.epsilon = MIN_EPSILON
 
-    def greedy_actor(self, state, label):
-        if (state[2 * 9 + 2 * 9 + label] == 8):
-            return 8
+    def greedy_actor(self, state):
         if np.random.rand() <= self.epsilon:
-            for i in range (9):
-                if (state[9 * 2 + label * 2] == state[i * 2] and state[9 * 2 + label * 2 + 1] == state[i * 2 + 1]) and (state[9*2+9*2+9+i]>0):
-                    return random.randrange(self.action_size - 1)
-            return random.randrange(self.action_size - 2)
+            return random.randrange(self.action_size)
         else:
-            for i in range (9):
-                if (state[9 * 2 + label * 2] == state[i * 2] and state[9 * 2 + label * 2 + 1] == state[i * 2 + 1]) and (state[9*2+9*2+9+i]>0):
-                    return np.argmax(self.brain.predict_one_sample(state)[0:-1])
-            return np.argmax(self.brain.predict_one_sample(state)[0:-2])
+            return np.argmax(self.brain.predict_one_sample(state))
 
     def find_targets_per(self, batch):
         batch_len = len(batch)

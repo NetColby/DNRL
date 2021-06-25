@@ -9,7 +9,7 @@ import os
 import random
 import argparse
 import pandas as pd
-from stage1_env import Environment
+from stage1_env2 import Environment
 from stage1_agent import Agent
 import glob
 
@@ -90,10 +90,10 @@ class Simulation(object):
                 # if self.render:
                 #     self.env.render()
                 actions = []
-                i = 0
+                # i = 0
                 for agent in agents:  
-                    actions.append(agent.greedy_actor(state,i))
-                    i += 1
+                    actions.append(agent.greedy_actor(state))
+                    # i += 1
                 
                 next_state, reward, done = self.env.step(actions)
                 # converting list of positions to an array
@@ -108,9 +108,11 @@ class Simulation(object):
                             if time_step % self.steps_b_updates == 0:
                                 agent.replay()
                             agent.update_target_model()
-                if time_step % 100 == 0:
+
+                if time_step % 20 == 0:
                     print(f'current reward:{reward}')
                     print(f'current actions:{actions}')
+                    print(f'current state:{state}')
                 total_step += 1
                 time_step += 1
                 state = next_state
@@ -167,7 +169,7 @@ if __name__ =="__main__":
 
     # Game Parameters
     parser.add_argument('-k', '--agents-number', default=9, type=int, help='The number of agents')
-    parser.add_argument('-g', '--grid-size', default=300, type=int, help='Grid size')
+    parser.add_argument('-g', '--grid-size', default=30, type=int, help='Grid size')
     parser.add_argument('-ts', '--max-timestep', default=100000, type=int, help='Maximum number of timesteps per episode')
 
     parser.add_argument('-rm', '--max-random-moves', default=0, type=int,
