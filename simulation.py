@@ -109,9 +109,9 @@ class Simulation(object):
                                 agent.replay()
                             agent.update_target_model()
 
-                if time_step % 20 == 0:
+                if time_step % 500 == 0:
                     print(f'current reward:{reward}')
-                    print(f'current actions:{actions}')
+                    print(f'current timestep:{time_step}')
                     print(f'current state:{state}')
                 total_step += 1
                 time_step += 1
@@ -170,7 +170,7 @@ if __name__ =="__main__":
     # Game Parameters
     parser.add_argument('-k', '--agents-number', default=9, type=int, help='The number of agents')
     parser.add_argument('-g', '--grid-size', default=30, type=int, help='Grid size')
-    parser.add_argument('-ts', '--max-timestep', default=100000, type=int, help='Maximum number of timesteps per episode')
+    parser.add_argument('-ts', '--max-timestep', default=50000, type=int, help='Maximum number of timesteps per episode')
 
     parser.add_argument('-rm', '--max-random-moves', default=0, type=int,
                         help='Maximum number of random initial moves for the agents')

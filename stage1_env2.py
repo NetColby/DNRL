@@ -16,10 +16,10 @@ C_H = 2  # energy consumption rate for hovering
 C_T = 3  # energy consumption rate for task execution
 C_F = 2.5  # energy consumption rate for forwarding
 EFFICIENCY_THRESHOLD = 0.3  # energy efficiency threshold for calculating reward
-B = 10000  # battery capacity for drone
+B = 150000  # battery capacity for drone
 T = 3000  # energy required for one single task
 Q = -50  # drone not coming back penalty
-TRAVEL_ENERGY_THRESHOLD = 1180
+TRAVEL_ENERGY_THRESHOLD = 80000
 
 # actions
 UP = 0
@@ -104,9 +104,9 @@ class Environment:
         else:
             current_travel_energy = (B * self.num_agents - np.sum(self.B_k)) - np.sum(self.y_ik)
             if current_travel_energy <= TRAVEL_ENERGY_THRESHOLD:
-                reward = np.sum(self.y_ik) / (T * self.num_tasks) + np.sum(self.y_ik) / (B * self.num_agents - np.sum(self.B_k)) + np.sum(self.B_k, where = self.B_k < 0) / (B * self.num_agents)
+                reward = 0.55*np.sum(self.y_ik) / (T * self.num_tasks) + 0.4*np.sum(self.y_ik) / (B * self.num_agents - np.sum(self.B_k)) + 0.05*np.sum(self.B_k, where = self.B_k < 0) / (B * self.num_agents)
             else:
-                reward = (TRAVEL_ENERGY_THRESHOLD - current_travel_energy) / TRAVEL_ENERGY_THRESHOLD + 1 / (T * self.num_tasks - np.sum(self.y_ik) + 1)
+                reward = 0.2*(TRAVEL_ENERGY_THRESHOLD - current_travel_energy) / TRAVEL_ENERGY_THRESHOLD + 0.7*np.sum(self.y_ik) / (T * self.num_tasks) + 0.1*np.sum(self.y_ik) / (B * self.num_agents - np.sum(self.B_k))
 
         new_pos_state = list(sum(self.tasks_positions + self.agents_positions, ()))
         new_state = new_pos_state + agents_actions + list(self.T_i) + list(self.B_k)
