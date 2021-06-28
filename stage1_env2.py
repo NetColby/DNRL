@@ -144,7 +144,7 @@ class Environment:
         task_idx = []
         for i in range(len(agents_execute_pos)):
             for j in range(len(self.tasks_positions)):
-                if (self.tasks_positions[j] == tuple(agents_execute_pos[i]) and self.B_k[execute_idx[i]]>C_T+C_H):
+                if (self.tasks_positions[j] == tuple(agents_execute_pos[i]) and self.B_k[execute_idx[i]]>C_T+C_H and self.T_i[j] >= C_T):
                     task_idx.append(j)
         for idx in task_idx:
             T_i[idx] = T_i[idx] - C_T
