@@ -157,7 +157,7 @@ class Environment:
         agents_execute_pos = list(np.array(pos_list)[execute_idx])
         for p in range(len(agents_execute_pos)):
             for q in range(len(self.tasks_positions)):
-                if (self.tasks_positions[q] == tuple(agents_execute_pos[p]) and self.B_k[execute_idx[p]]>C_T+C_H):
+                if (self.tasks_positions[q] == tuple(agents_execute_pos[p]) and self.B_k[execute_idx[p]]>C_T+C_H and self.T_i[q] >= C_T):
                     y_ik[q][p] = y_ik[q][p] + C_T
         return y_ik
 
