@@ -14,6 +14,7 @@ import numpy as np
 
 HUBER_LOSS_DELTA = 1.0
 
+print("Num GPUs Available: ", len(tf.config.list_physical_devices('GPU')))
 
 def huber_loss(y_true, y_predict):
     err = y_true - y_predict
