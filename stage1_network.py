@@ -13,8 +13,8 @@ from tensorflow.keras import backend as K
 import numpy as np
 
 HUBER_LOSS_DELTA = 1.0
-
-print("Num GPUs Available: ", len(tf.config.list_physical_devices('GPU')))
+sess = tf.Session()
+print("Num GPUs Available: ", len(tf.test.gpu_device_name()))
 
 def huber_loss(y_true, y_predict):
     err = y_true - y_predict
