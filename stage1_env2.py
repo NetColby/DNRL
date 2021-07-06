@@ -97,11 +97,11 @@ class Environment:
         self.y_ik = self.update_2D_array(self.agents_positions, agents_actions)
 
         if self.T_i.all()==0:
-            reward = 1 - ((B*self.num_agents-np.sum(self.B_k))-(T*self.num_tasks-np.sum(self.T_i))-np.sum(self.T_i)/C_T*C_H)/(B*self.num_agents-np.sum(self.B_k)) + (T*self.num_tasks-np.sum(self.T_i))/(T*self.num_tasks) - (self.B_k< 0).sum() + (self.B_k>0).sum()
+            reward = 1 - ((B*self.num_agents-np.sum(self.B_k))-(T*self.num_tasks-np.sum(self.T_i))-np.sum(self.y_ik)/C_T*C_H)/(B*self.num_agents-np.sum(self.B_k)) + (T*self.num_tasks-np.sum(self.T_i))/(T*self.num_tasks) - (self.B_k< 0).sum() + (self.B_k>0).sum()
             self.terminal = True
         #task unfinished
         else:
-            reward = 1 - ((B*self.num_agents-np.sum(self.B_k))-(T*self.num_tasks-np.sum(self.T_i))-np.sum(self.T_i)/C_T*C_H)/(B*self.num_agents-np.sum(self.B_k)) + (T*self.num_tasks-np.sum(self.T_i))/(T*self.num_tasks) - (self.B_k< 0).sum()/self.num_agents
+            reward = 1 - ((B*self.num_agents-np.sum(self.B_k))-(T*self.num_tasks-np.sum(self.T_i))-np.sum(self.y_ik)/C_T*C_H)/(B*self.num_agents-np.sum(self.B_k)) + (T*self.num_tasks-np.sum(self.T_i))/(T*self.num_tasks) - (self.B_k< 0).sum()/self.num_agents
 
         new_pos_state = list(sum(self.tasks_positions + self.agents_positions, ()))
         new_state = new_pos_state + agents_actions + list(self.T_i) + list(self.B_k)
