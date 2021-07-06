@@ -16,8 +16,8 @@ C_H = 2  # energy consumption rate for hovering
 C_T = 3  # energy consumption rate for task execution
 C_F = 2.5  # energy consumption rate for forwarding
 EFFICIENCY_THRESHOLD = 0.3  # energy efficiency threshold for calculating reward
-B = 100000  # battery capacity for drone
-T = 2100  # energy required for one single task
+B = 1000  # battery capacity for drone
+T = 21  # energy required for one single task
 Q = -50  # drone not coming back penalty
 TRAVEL_ENERGY_THRESHOLD = 8000
 
@@ -84,6 +84,7 @@ class Environment:
         initial_state = initial_state + list(self.B_k)
         return initial_state
 
+
     def step(self, agents_actions):
         # task finisihed & drones all go back to base station
         # update the position of agents
@@ -97,18 +98,19 @@ class Environment:
         self.y_ik = self.update_2D_array(self.agents_positions, agents_actions)
 
         if self.T_i.all() == 0 and np.all(np.asarray(self.agents_positions)==(BASE_X,BASE_Y)):
-            if np.all(self.B_k >= 0):
-                reward = 1 - ((B*self.num_agents-np.sum(self.B_k))-(T*self.num_tasks-np.sum(self.T_i)))/(B*self.num_agents-np.sum(self.B_k)) + (T*self.num_tasks-np.sum(self.T_i))/(T*self.num_tasks) + 9000
-            else:
-                reward = 1 - ((B * self.num_agents - np.sum(self.B_k)) - (T * self.num_tasks - np.sum(self.T_i))) / (
-                            B * self.num_agents - np.sum(self.B_k)) + (T * self.num_tasks - np.sum(self.T_i)) / (
-                                     T * self.num_tasks) - (self.B_k<0).sum()*1000
+
+            reward = 1 - ((B * self.num_agents - np.sum(self.B_k)) - (T * self.num_tasks - np.sum(self.T_i)) - np.sum(
+                self.y_ik) / C_T * C_H) / (B * self.num_agents - np.sum(self.B_k)) + (
+                                 T * self.num_tasks - np.sum(self.T_i)) / (T * self.num_tasks) - (
+                                 self.B_k < 0).sum() + (self.B_k > 0).sum()
             self.terminal = True
 
         #task unfinished
         else:
-            reward = 1 - ((B*self.num_agents-np.sum(self.B_k))-(T*self.num_tasks-np.sum(self.T_i)))/(B*self.num_agents-np.sum(self.B_k)) + (T*self.num_tasks-np.sum(self.T_i))/(T*self.num_tasks) + np.sum(self.B_k, where = self.B_k < 0)/(B*self.num_agents-np.sum(self.B_k))
-
+            reward = 1 - ((B * self.num_agents - np.sum(self.B_k)) - (T * self.num_tasks - np.sum(self.T_i)) - np.sum(
+                self.y_ik) / C_T * C_H) / (B * self.num_agents - np.sum(self.B_k)) + (
+                                 T * self.num_tasks - np.sum(self.T_i)) / (T * self.num_tasks) - (
+                                 self.B_k < 0).sum() / self.num_agents
         new_pos_state = list(sum(self.tasks_positions + self.agents_positions, ()))
         new_state = new_pos_state + agents_actions + list(self.T_i) + list(self.B_k)
         return [new_state, reward, self.terminal]
