@@ -13,8 +13,6 @@ from tensorflow.keras import backend as K
 import numpy as np
 
 HUBER_LOSS_DELTA = 1.0
-sess = tf.Session()
-print("Num GPUs Available: ", len(tf.test.gpu_device_name()))
 
 def huber_loss(y_true, y_predict):
     err = y_true - y_predict
@@ -76,9 +74,9 @@ class Brain(object):
         model = Model(inputs=x, outputs=z)
 
         if self.optimizer_model == 'Adam':
-            optimizer = Adam(lr=self.learning_rate, clipnorm=1.)
+            optimizer = Adam(learning_rate=self.learning_rate, clipnorm=1.)
         elif self.optimizer_model == 'RMSProp':
-            optimizer = RMSprop(lr=self.learning_rate, clipnorm=1.)
+            optimizer = RMSprop(learning_rate=self.learning_rate, clipnorm=1.)
         else:
             print('Invalid optimizer!')
 

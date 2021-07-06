@@ -1,5 +1,5 @@
 '''
-Jiyao Chen
+Jiyao Chen & Changling Li
 June 15 2021
 Environment for stage 1
 '''
@@ -16,8 +16,8 @@ C_H = 2  # energy consumption rate for hovering
 C_T = 3  # energy consumption rate for task execution
 C_F = 2.5  # energy consumption rate for forwarding
 EFFICIENCY_THRESHOLD = 0.3  # energy efficiency threshold for calculating reward
-B = 150000  # battery capacity for drone
-T = 2100  # energy required for one single task
+B = 300  # battery capacity for drone
+T = 30  # energy required for one single task
 Q = -50  # drone not coming back penalty
 TRAVEL_ENERGY_THRESHOLD = 8000
 
@@ -96,19 +96,12 @@ class Environment:
         # update 2D array (the portion of task at location i executed by drone k)
         self.y_ik = self.update_2D_array(self.agents_positions, agents_actions)
 
-        if self.T_i.all()==0 and np.all(np.asarray(self.agents_positions)==(BASE_X,BASE_Y)):
-            # reward = np.sum(self.y_ik) / (T * self.num_tasks) + np.sum(self.y_ik) / (B * self.num_agents - np.sum(self.B_k))
-            reward = 1 - ((B*self.num_agents-np.sum(self.B_k))-(T*self.num_tasks-np.sum(self.T_i)))/(B*self.num_agents-np.sum(self.B_k)) + (T*self.num_tasks-np.sum(self.T_i))/(T*self.num_tasks) + np.sum(self.B_k, where = self.B_k < 0)/(B*self.num_agents-np.sum(self.B_k)) + (self.B_k>0).sum()/self.num_agents
+        if self.T_i.all()==0:
+            reward = 1 - ((B*self.num_agents-np.sum(self.B_k))-(T*self.num_tasks-np.sum(self.T_i))-np.sum(self.T_i)/C_T*C_H)/(B*self.num_agents-np.sum(self.B_k)) + (T*self.num_tasks-np.sum(self.T_i))/(T*self.num_tasks) - (self.B_k< 0).sum() + (self.B_k>0).sum()
             self.terminal = True
-
         #task unfinished
         else:
-            reward = 1 - ((B*self.num_agents-np.sum(self.B_k))-(T*self.num_tasks-np.sum(self.T_i)))/(B*self.num_agents-np.sum(self.B_k)) + (T*self.num_tasks-np.sum(self.T_i))/(T*self.num_tasks) + np.sum(self.B_k, where = self.B_k < 0)/(B*self.num_agents-np.sum(self.B_k))
-            # current_travel_energy = (B * self.num_agents - np.sum(self.B_k)) - np.sum(self.y_ik)
-            # if current_travel_energy <= TRAVEL_ENERGY_THRESHOLD:
-            #     reward = 0.55*np.sum(self.y_ik) / (T * self.num_tasks) + 0.4*np.sum(self.y_ik) / (B * self.num_agents - np.sum(self.B_k)) + 0.05*np.sum(self.B_k, where = self.B_k < 0) / (B * self.num_agents)
-            # else:
-            #     reward = 0.2*(TRAVEL_ENERGY_THRESHOLD - current_travel_energy) / TRAVEL_ENERGY_THRESHOLD + 0.7*np.sum(self.y_ik) / (T * self.num_tasks) + 0.1*np.sum(self.y_ik) / (B * self.num_agents - np.sum(self.B_k))
+            reward = 1 - ((B*self.num_agents-np.sum(self.B_k))-(T*self.num_tasks-np.sum(self.T_i))-np.sum(self.T_i)/C_T*C_H)/(B*self.num_agents-np.sum(self.B_k)) + (T*self.num_tasks-np.sum(self.T_i))/(T*self.num_tasks) - (self.B_k< 0).sum()/self.num_agents
 
         new_pos_state = list(sum(self.tasks_positions + self.agents_positions, ()))
         new_state = new_pos_state + agents_actions + list(self.T_i) + list(self.B_k)
