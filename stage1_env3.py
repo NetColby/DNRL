@@ -16,8 +16,8 @@ C_H = 2  # energy consumption rate for hovering
 C_T = 3  # energy consumption rate for task execution
 C_F = 2.5  # energy consumption rate for forwarding
 EFFICIENCY_THRESHOLD = 0.3  # energy efficiency threshold for calculating reward
-B = 1000  # battery capacity for drone
-T = 21  # energy required for one single task
+B = 1800  # battery capacity for drone
+T = 15  # energy required for one single task
 Q = -50  # drone not coming back penalty
 TRAVEL_ENERGY_THRESHOLD = 8000
 
@@ -92,17 +92,17 @@ class Environment:
         # update drones energy state
         self.B_k = self.update_agents_energy(agents_actions)
         # update task energy required
-        T_i_previous = self.T_i
+        sum_before = np.sum(self.T_i)
         self.T_i = self.update_tasks_energy(self.agents_positions, agents_actions)
         # update 2D array (the portion of task at location i executed by drone k)
         self.y_ik = self.update_2D_array(self.agents_positions, agents_actions)
         sum_after = np.sum(self.T_i)
-        sum_before = np.sum(T_i_previous)
+        
         if self.T_i.any() == 0: #and np.all(np.asarray(self.agents_positions)==(BASE_X,BASE_Y)):
             if np.all(self.B_k >= 0):
-                reward = self.num_agents
+                reward = (sum_before - sum_after) / C_T + np.sum(self.B_k)/(self.num_agents*B) * 100
             else:
-                reward = - (self.B_k<0).sum()
+                reward = (sum_before - sum_after) / C_T - (self.B_k<0).sum()
             self.terminal = True
 
         #task unfinished

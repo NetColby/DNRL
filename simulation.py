@@ -9,7 +9,7 @@ import os
 import random
 import argparse
 import pandas as pd
-from stage1_env2 import Environment
+from stage1_env3 import Environment
 from stage1_agent import Agent
 import glob
 
@@ -59,7 +59,7 @@ class Simulation(object):
         self.grid_size = arguments['grid_size']
 
     def run(self, agents, file1, file2):
-
+        rslt = open('output.txt','w')
         total_step = 0
         rewards_list = []
         timesteps_list = []
@@ -109,10 +109,13 @@ class Simulation(object):
                                 agent.replay()
                             agent.update_target_model()
 
-                if time_step % 500 == 0:
+                if time_step % 50 == 0 or done:
                     print(f'current reward:{reward}')
                     print(f'current timestep:{time_step}')
                     print(f'current state:{state}')
+                    rslt.write(f'current reward:{reward}\n')
+                    rslt.write(f'current timestep:{time_step}\n')
+                    rslt.write(f'current state:{state}\n')
                 total_step += 1
                 time_step += 1
                 state = next_state
@@ -126,9 +129,10 @@ class Simulation(object):
 
             print("Episode {p}, Score: {s}, Final Step: {t}, Goal: {g}".format(p=episode_num, s=reward_all,
                                                                                t=time_step, g=done))
-
+            rslt.write("Episode {p}, Score: {s}, Final Step: {t}, Goal: {g}\n".format(p=episode_num, s=reward_all,
+                                                                               t=time_step, g=done))
             if not self.test:
-                if episode_num % 5 == 0:
+                if episode_num % 1 == 0:
                     df = pd.DataFrame(rewards_list, columns=['score'])
                     df.to_csv(file1)
 
@@ -140,21 +144,21 @@ class Simulation(object):
                             for agent in agents:
                                 agent.brain.save_model()
                             max_score = reward_all
-
+        rslt.close()
 
 if __name__ =="__main__":
 
     parser = argparse.ArgumentParser()
     # DQN Parameters
     parser.add_argument('-e', '--episode-number', default=1000000, type=int, help='Number of episodes')
-    parser.add_argument('-l', '--learning-rate', default=0.0005, type=float, help='Learning rate')
+    parser.add_argument('-l', '--learning-rate', default=0.00005, type=float, help='Learning rate')
     parser.add_argument('-op', '--optimizer', choices=['Adam', 'RMSProp'], default='RMSProp',
                         help='Optimization method')
     parser.add_argument('-m', '--memory-capacity', default=1000000, type=int, help='Memory capacity')
     parser.add_argument('-b', '--batch-size', default=64, type=int, help='Batch size')
-    parser.add_argument('-t', '--target-frequency', default=10000, type=int,
+    parser.add_argument('-t', '--target-frequency', default=60000, type=int,
                         help='Number of steps between the updates of target network')
-    parser.add_argument('-x', '--maximum-exploration', default=5000000, type=int, help='Maximum exploration step')
+    parser.add_argument('-x', '--maximum-exploration', default=600000, type=int, help='Maximum exploration step')
     parser.add_argument('-fsm', '--first-step-memory', default=0, type=float,
                         help='Number of initial steps for just filling the memory')
     parser.add_argument('-rs', '--replay-steps', default=4, type=float, help='Steps between updating the network')
@@ -170,7 +174,7 @@ if __name__ =="__main__":
     # Game Parameters
     parser.add_argument('-k', '--agents-number', default=9, type=int, help='The number of agents')
     parser.add_argument('-g', '--grid-size', default=7, type=int, help='Grid size')
-    parser.add_argument('-ts', '--max-timestep', default=50000, type=int, help='Maximum number of timesteps per episode')
+    parser.add_argument('-ts', '--max-timestep', default=600, type=int, help='Maximum number of timesteps per episode')
 
     parser.add_argument('-rm', '--max-random-moves', default=0, type=int,
                         help='Maximum number of random initial moves for the agents')
