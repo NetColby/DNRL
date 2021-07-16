@@ -57,20 +57,19 @@ def play(episodes, is_render, is_testing, checkpoint_interval,
 
             # learn
             if not args.testing:
-                size = memories.pointer
+                size = memories[0].pointer
                 batch = random.sample(range(size), size) if size < batch_size else random.sample(
                     range(size), batch_size)
 
-                memories.remember(states, actions,
-                                        rewards, states_next, done)
+                for i in range(env.num_agents):
+                    memories[i].remember(states, actions[i], rewards, states_next, done)
 
-                if memories.pointer > batch_size * 10:
-                    for i in range(env.num_agents):
-                        history = dqns[i].learn(*memories.sample(batch))
+                    if memories[i].pointer > batch_size * 10:
+                        history = dqns[i].learn(*memories[i].sample(batch))
                         episode_losses[i] += history.history["loss"][0]
-                else:
-                    for i in range(env.num_agents):
-                        episode_losses[i] = -1
+                    else:
+                        for i in range(env.num_agents):
+                            episode_losses[i] = -1
 
             states = states_next
             episode_rewards += rewards
@@ -82,7 +81,7 @@ def play(episodes, is_render, is_testing, checkpoint_interval,
 
                 statistic = [episode]
                 statistic.append(steps)
-                statistic.extend(episode_rewards)
+                statistic.append(episode_rewards)
                 statistic.extend([episode_losses[i] for i in range(env.num_agents)])
                 statistic.extend([dqns[i].eps_greedy for i in range(env.num_agents)])
                 statistics.add_statistics(statistic)
@@ -148,7 +147,7 @@ if __name__ == '__main__':
     # init DQNs
     n_actions = len(env.action_space)
     state_sizes = env.state_size
-    memories = Memory(args.memory_size)
+    memories = [Memory(args.memory_size) for i in range(env.num_agents)]
     dqns = [DQN(n_actions, state_sizes, eps_greedy=epsilon_greedy[i])
             for i in range(env.num_agents)]
 
