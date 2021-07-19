@@ -21,9 +21,12 @@ def play(episodes, is_render, is_testing, checkpoint_interval,
     # init statistics. NOTE: simple tag specific!
     statistics_header = ["episode"]
     statistics_header.append("steps")
+    statistics_header.append("done")
     statistics_header.append("reward")
     statistics_header.extend(["loss_{}".format(i) for i in range(env.num_agents)])
     statistics_header.extend(["eps_greedy_{}".format(i) for i in range(env.num_agents)])
+    statistics_header.extend(["Agent Energy Left_{}".format(i) for i in range(env.num_agents)])
+    statistics_header.extend(["Task Energy Left_{}".format(i) for i in range(env.num_agents)])
     print("Collecting statistics {}:".format(" ".join(statistics_header)))
     statistics = general_utilities.Time_Series_Statistics_Store(
         statistics_header)
@@ -38,6 +41,7 @@ def play(episodes, is_render, is_testing, checkpoint_interval,
 
         steps = 0
 
+        all_states = [states]
         while steps <= 600:
             steps += 1
 
@@ -54,7 +58,7 @@ def play(episodes, is_render, is_testing, checkpoint_interval,
 
             # step
             states_next, rewards, done, info = env.step(actions)
-
+            all_states.append(states_next)
             # learn
             if not args.testing:
                 size = memories[0].pointer
@@ -79,12 +83,22 @@ def play(episodes, is_render, is_testing, checkpoint_interval,
 
                 statistic = [episode]
                 statistic.append(steps)
+                statistic.append(done)
                 statistic.append(episode_rewards)
                 statistic.extend([episode_losses[i] for i in range(env.num_agents)])
                 statistic.extend([dqns[i].eps_greedy for i in range(env.num_agents)])
+                statistic.extend([env.B_k[i] for i in range(env.num_agents)])
+                statistic.extend([env.T_i[i] for i in range(env.num_agents)])
                 statistics.add_statistics(statistic)
                 if episode % 1 == 0:
                     print(statistics.summarize_last())
+
+                if done:
+                    with open('/save/states/episode{}_states.txt'.format(episode), mode = 'w') as myfile:
+                        for each in all_states:
+                            myfile.write(each)
+                            myfile.write('\n')
+                    myfile.close()
                 break
 
         if episode % checkpoint_interval == 0:
@@ -103,7 +117,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--env', default='simple_tag_guided', type=str)
     parser.add_argument('--learning_rate', default=0.001, type=float)
-    parser.add_argument('--episodes', default=500000, type=int)
+    parser.add_argument('--episodes', default=10000, type=int)
     parser.add_argument('--render', default=False, action="store_true")
     parser.add_argument('--benchmark', default=False, action="store_true")
     parser.add_argument('--experiment_prefix', default=".",
@@ -141,13 +155,13 @@ if __name__ == '__main__':
     random.seed(args.random_seed)
     np.random.seed(args.random_seed)
     #tf.random.set_seed(args.random_seed)
-    tf.set_random_seed(args.random_seed)
+    tf.random.set_seed(args.random_seed)
 
     # init DQNs
     n_actions = len(env.action_space)
     state_sizes = env.state_size
     memories = [Memory(args.memory_size) for i in range(env.num_agents)]
-    dqns = [DQN(n_actions, state_sizes, eps_greedy=epsilon_greedy[i])
+    dqns = [DQN(n_actions, state_sizes, eps_greedy=epsilon_greedy[i], eps_increment=0.0000003)
             for i in range(env.num_agents)]
 
     general_utilities.load_dqn_weights_if_exist(
